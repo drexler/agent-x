@@ -1,0 +1,32 @@
+{
+  "name": "agent-x",
+  "version": "1.0.0",
+  "description": "Executes queries against all databases on an RDS SQL Server instance.",
+  "engine": {
+    "node": ">=6.10.0"
+  },
+  "main": "./dist/index.js",
+  "scripts": {
+    "build": "webpack --mode development"
+  },
+  "author": "drexler",
+  "license": "MIT",
+  "devDependencies": {
+    "copy-webpack-plugin": "^4.5.2",
+    "serverless-cloudformation-resource-counter": "^0.1.1",
+    "serverless-webpack": "^5.2.0",
+    "tslint": "^5.11.0"
+  },
+  "dependencies": {
+    "@types/aws-lambda": "^8.10.11",
+    "@types/mssql": "^4.0.9",
+    "@types/node": "^10.7.1",
+    "@types/p-settle": "^2.0.1",
+    "mssql": "^4.1.0",
+    "p-settle": "^2.1.0",
+    "ts-loader": "^4.5.0",
+    "typescript": "^3.0.1",
+    "webpack": "^4.16.5",
+    "webpack-merge": "^4.1.4"
+  }
+}

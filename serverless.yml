@@ -1,0 +1,48 @@
+service: notification-scheduler
+
+provider:
+  name: aws
+  runtime: nodejs8.10
+  timeout: 300   # AWS Lambda runtime limit (5 mins)
+  versionFunctions: false
+  memorySize: 128
+  vpc:
+    securityGroupIds:
+      - ${file(${opt:variables}):lambdaExecutionSecurityGroup}
+    subnetIds:
+      - ${file(${opt:variables}):privateSubnetId1}
+      - ${file(${opt:variables}):privateSubnetId2}
+    
+  environment:  #environment variables
+    awsRegion: ${file(${opt:variables}):awsRegion}
+    dbUsername: ${file(${opt:variables}):dbUsername}
+    dbPassword: ${file(${opt:variables}):dbPassword}
+    dbEndpoints: ${file(${opt:variables}):dbEndpoints}
+
+  iamRoleStatements: 
+    - Effect: Allow
+      Action: # Gives permission to create the necessary ENIs for execution in VPC
+        - ec2:CreateNetworkInterface
+        - ec2:DescribeNetworkInterfaces
+        - ec2:DeleteNetworkInterface
+        - ec2:DetachNetworkInterface
+      Resource: "arn:aws:ec2:us-east-1:*:*"
+
+functions:
+  updateAlertTriggers:
+    handler: src/handler.executeQueries
+    events:
+      - schedule: 
+          rate: cron(0/2 * * * ? *)    # Run every 2 minutes (Test)  cron(0 9 * * ? *)   # Run at 0900 UTC each day
+          enabled: true
+
+        
+plugins:
+  - serverless-webpack
+  - serverless-cloudformation-resource-counter
+
+custom:
+  webpack: 
+    webpackConfig: ./webpack/${file(${opt:variables}):webpackConfigurationFile}
+    includeModules: true   
+    packager: 'npm'   
