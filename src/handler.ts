@@ -2,6 +2,7 @@
 import * as agentService from './agent.service';
 import * as pSettle from 'p-settle';
 import { Context, ScheduledEvent } from 'aws-lambda';
+import * as notificationService from './notification';
 
 /**
  * Executes queries against RDS instances' databases' concurrently
@@ -35,6 +36,7 @@ export async function executeQueries(event: ScheduledEvent, context: Context) {
   } catch (error) {
     console.error(error);
   } finally {
+    await notificationService.publishMessage('hello there');
     const hrEnd = process.hrtime(hrStart);
     console.log('Execution Time (hr): %ds %dms', hrEnd[0], hrEnd[1] / 1000000);
     console.log(`Execution Timeout Window left: ${context.getRemainingTimeInMillis()}ms`);
