@@ -29,11 +29,11 @@ provider:
       Resource: "arn:aws:ec2:us-east-1:*:*"
 
 functions:
-  updateAlertTriggers:
+  executeQueries:
     handler: src/handler.executeQueries
     events:
       - schedule: 
-          rate: cron(0/2 * * * ? *)    # Run every 2 minutes (Test)  cron(0 9 * * ? *)   # Run at 0900 UTC each day
+          rate: cron(0/2 * * * ? *)    # Run every 2 minutes (Test)  cron(0,0 9 * * ? *)   # Run at 0900 UTC each day
           enabled: true
 
         

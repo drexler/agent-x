@@ -60,8 +60,7 @@ export function executeQuery(transaction: Transaction, queryName: string, sqlQue
                             if (commitError) {
                                 reject(commitError);
                             } else {
-                                console.log(`Success: ${queryName}`);
-                                console.log(`${results.rowsAffected[0]} rows affected`);
+                                console.log(`Success: ${queryName}: ${results.rowsAffected[0]} rows affected`);
                                 resolve(results);
                             }
                         });
