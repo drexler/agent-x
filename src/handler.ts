@@ -5,6 +5,7 @@ import { Context, ScheduledEvent, SNSEvent, SNSEventRecord, SNSMessage} from 'aw
 import * as notificationService from './notification';
 
 import * as request from 'superagent';
+import * as slackService from './slack';
 
 /**
  * Executes queries against RDS instances' databases' concurrently
@@ -16,29 +17,34 @@ export async function executeQueries(event: ScheduledEvent, context: Context) {
   const hrStart = process.hrtime();
 
   const invocations: Array<Promise<void>> = [];
+  const instanceErrors: string[] = [];
 
   const rdsInstanceEndpoints = process.env.dbEndpoints.split(',');
   rdsInstanceEndpoints.forEach((endpoint) => {
     const instance = endpoint.trim();
     const update = agentService.executeQueries(instance);
 
-    // Preemptively handle error to allow other database updates executions to go ahead.
     update.catch((error) => {
-      const errorMessage = `RDS Instance error. Endpoint: ${instance}`;
-      console.error(`${errorMessage}. Reason: ${error}`);
-      notificationService.publishMessage(errorMessage);
+      const errorMessage = `RDS Instance error. Endpoint: ${instance}. Reason: ${error}`;
+      console.error(errorMessage);
+      instanceErrors.push(errorMessage);
       return error;
     });
 
     invocations.push(update);
   });
 
-  // Perform parallel execcutions on respective RDS instances
+  // Perform parallel executions on respective RDS instances
   try {
     await pSettle(invocations);
+    if (instanceErrors.length > 0) {
+      await notificationService.publishMessage(slackService.buildMessageAttachment(instanceErrors));
+    }
+    await notificationService.publishMessage(slackService.buildMessage('Agent-X executed successfully'));
   } catch (error) {
-    console.error(error);
-    await notificationService.publishMessage(error);
+    const errorMessage = `Lambda Execution Failure: ${error.message}`;
+    console.error(errorMessage);
+    await notificationService.publishMessage(slackService.buildMessage(errorMessage));
   } finally {
     const hrEnd = process.hrtime(hrStart);
     console.log('Execution Time (hr): %ds %dms', hrEnd[0], hrEnd[1] / 1000000);
@@ -60,7 +66,7 @@ export function slackNotify(event: SNSEvent, context: Context) {
        try {
           await request
             .post(process.env.slackWebIntegrationUrl)
-            .send(JSON.stringify({text: record.Sns.Message}))
+            .send(record.Sns.Message)
             .set('Content-Type', 'application/json');
 
           context.succeed('posted to Slack');

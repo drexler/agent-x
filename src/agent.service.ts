@@ -1,11 +1,12 @@
 
 import * as agentDao from './agent.dao';
 import { Queries } from './queries';
-import { ConnectionPool, IResult } from 'mssql';
+import { ConnectionPool, IResult, RequestError } from 'mssql';
 import { SettledResult } from 'p-settle';
 
 import * as pSettle from 'p-settle';
 import * as notificationService from './notification';
+import * as slackService from './slack';
 
 /**
  * Executes sql scripts across all databases within a given RDS instance
@@ -18,14 +19,15 @@ export async function executeQueries(rdsInstanceEndpoint: string): Promise<void>
         const databases = await listAvailableDatabases(rdsInstanceEndpoint);
 
         const databaseAlertUpdates: Array<Promise<void>> = [];
+        const databaseErrors: string[] = [];
+
         databases.forEach((database) => {
             const update = executeQueryOnDatabase(rdsInstanceEndpoint, database);
 
-            // Preemptively handle error to allow other database updates executions to go ahead.
             update.catch((error) => {
-                const errorMessage = `Database error. Instance Endpoint: ${rdsInstanceEndpoint} Database: ${database}`;
-                console.error(`${errorMessage}. Reason: ${error}`);
-                notificationService.publishMessage(errorMessage);
+                const errorMessage = `Database error. Instance Endpoint: ${rdsInstanceEndpoint} Database: ${database} Reason: ${error}`;
+                console.error(errorMessage);
+                databaseErrors.push(errorMessage);
                 return error;
             });
 
@@ -33,6 +35,10 @@ export async function executeQueries(rdsInstanceEndpoint: string): Promise<void>
         });
 
         await pSettle(databaseAlertUpdates);
+
+        if (databaseErrors.length > 0) {
+            await notificationService.publishMessage(slackService.buildMessageAttachment(databaseErrors));
+        }
 
     } catch (error) {
        throw error;
@@ -97,6 +103,7 @@ async function executeQueryOnDatabase(rdsInstanceEndpoint: string, database: str
         );
 
         const queryExecutions: Array<Promise<IResult<{}>>> = [];
+        const executionErrors: string[] = [];
 
         Object.keys(Queries)
             .filter((name) => name !== 'database')
@@ -104,21 +111,21 @@ async function executeQueryOnDatabase(rdsInstanceEndpoint: string, database: str
                const invocation = agentDao.executeQuery(pool.transaction(), name, Queries[name]);
 
                // Preemptively handle error to allow other queries executions to go ahead.
-               invocation.catch((error) => {
-                   const errorMessage = `Execution error. Query name: ${name} Database: ${database} Endpoint: ${rdsInstanceEndpoint}. Reason: ${error}`;
-                   return new Error(errorMessage);
+               invocation.catch((error: RequestError) => {
+                   const errorMessage = `Execution error. Query name: ${name} Database: ${database} Endpoint: ${rdsInstanceEndpoint}. Reason: ${error.message}`;
+                   console.error(errorMessage);
+                   executionErrors.push(errorMessage);
+                   return error;
                });
 
                queryExecutions.push(invocation);
         });
 
-        const executionResults: Array<SettledResult<IResult<{}>>> = await pSettle(queryExecutions);
-        executionResults
-            .filter((result) => result.isRejected === true)
-            .forEach((executionError) => {
-                console.error(executionError.reason);
-                notificationService.publishMessage(executionError.reason);
-            });
+        await pSettle(queryExecutions);
+
+        if (executionErrors.length > 0) {
+            await notificationService.publishMessage(slackService.buildMessageAttachment(executionErrors));
+        }
 
     } catch (error) {
         throw error;
