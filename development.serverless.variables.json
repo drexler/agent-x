@@ -1,0 +1,11 @@
+{
+    "awsRegion": "us-east-1",
+    "dbUsername": "MeMyselfAndI",
+    "dbPassword": "KeepItSafeKeepItSecretForTheDarkLordCometh",
+    "dbEndpoints": "xxxx.xxxx.us-east-1.rds.amazonaws.com",
+    "lambdaExecutionSecurityGroup": "sg-xxxxxxxx",
+    "privateSubnetId1": "subnet-xxxxxxxx",
+    "privateSubnetId2": "subnet-xxxxxxxx",
+    "webpackConfigurationFile": "pre-production.config.js",
+    "slackWebIntegrationUrl": "https://hooks.slack.com/services/xxxxxxx/xxxxxxx"
+}

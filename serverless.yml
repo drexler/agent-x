@@ -1,0 +1,82 @@
+service: agent-x
+
+provider:
+  name: aws
+  runtime: nodejs8.10
+  timeout: 300   # AWS Lambda runtime limit (5 mins)
+  versionFunctions: false
+  memorySize: 128
+  vpc:
+    securityGroupIds:
+      - ${file(${opt:variables}):lambdaExecutionSecurityGroup}
+    subnetIds:
+      - ${file(${opt:variables}):privateSubnetId1}
+      - ${file(${opt:variables}):privateSubnetId2}
+    
+  environment:  #environment variables
+    awsRegion: ${file(${opt:variables}):awsRegion}
+    dbUsername: ${file(${opt:variables}):dbUsername}
+    dbPassword: ${file(${opt:variables}):dbPassword}
+    dbEndpoints: ${file(${opt:variables}):dbEndpoints}
+    notificationTopicArn: ${self:custom.topicArn}
+    slackWebIntegrationUrl: ${file(${opt:variables}):slackWebIntegrationUrl}
+
+  iamRoleStatements: 
+    - Effect: Allow
+      Action: # Gives permission to create the necessary ENIs for execution in VPC
+        - ec2:CreateNetworkInterface
+        - ec2:DescribeNetworkInterfaces
+        - ec2:DeleteNetworkInterface
+        - ec2:DetachNetworkInterface
+      Resource: "arn:aws:ec2:us-east-1:*:*"
+    - Effect: Allow
+      Action: # Gives permission to create SNS resources
+        - sns:ListTopics
+        - sns:CreateTopic
+        - sns:DeleteTopic
+        - sns:Publish
+      Resource: "arn:aws:sns:us-east-1:*:*"
+
+functions:
+  executeQueries:
+    handler: src/handler.executeQueries
+    events:
+      - schedule: 
+          rate: cron(0/2 * * * ? *)    # Run every 2 minutes (Test)  cron(0,0 9 * * ? *)   # Run at 0900 UTC each day
+          enabled: true
+  slackNotify:
+    handler: src/handler.slackNotify
+    events:
+      - sns: arn:aws:sns:${self:provider.region}:#{AWS::AccountId}:${self:custom.topicName}
+
+resources:
+  Resources:
+    AgentXStatusNotificationTopic:
+      Type: AWS::SNS::Topic
+      Properties:
+        DisplayName: "Agent-X Status Notification"
+        TopicName: ${self:custom.topicName}
+
+        
+plugins:
+  - serverless-webpack
+  - serverless-cloudformation-resource-counter
+  - serverless-pseudo-parameters
+
+custom:
+  webpack: 
+    webpackConfig: ./webpack/${file(${opt:variables}):webpackConfigurationFile}
+    includeModules: true   
+    packager: 'npm'
+  topicName: agent-x-status-notification
+  topicArn:
+    Fn::Join:
+      - ''
+      - - 'arn:aws:sns:'
+        - Ref: AWS::Region
+        - ":"
+        - Ref: AWS::AccountId
+        - ":"
+        - Fn::GetAtt:
+          - AgentXStatusNotificationTopic
+          - TopicName   
