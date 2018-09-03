@@ -18,7 +18,7 @@ export async function executeQueries(rdsInstanceEndpoint: string): Promise<void>
     try {
         const databases = await listAvailableDatabases(rdsInstanceEndpoint);
 
-        const databaseAlertUpdates: Array<Promise<void>> = [];
+        const databaseExecutions: Array<Promise<void>> = [];
         const databaseErrors: string[] = [];
 
         databases.forEach((database) => {
@@ -31,10 +31,10 @@ export async function executeQueries(rdsInstanceEndpoint: string): Promise<void>
                 return error;
             });
 
-            databaseAlertUpdates.push(update);
+            databaseExecutions.push(update);
         });
 
-        await pSettle(databaseAlertUpdates);
+        await pSettle(databaseExecutions);
 
         if (databaseErrors.length > 0) {
             await notificationService.publishMessage(slackService.buildMessageAttachment(databaseErrors));

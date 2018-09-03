@@ -20,3 +20,15 @@
 *Note: When removing a deployment of Agent-X in an existing custom VPC using the `sls remove` command, it sometimes hangs - refer to: https://github.com/serverless/serverless/issues/5252  .The workaround is for the user to log into the AWS Console to manually detach and delete the [Elastic Network Interface](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/using-eni.html) associated with the deployed lambda*
 
 
+##### Slack Integration
+Out-of-the-box support for Slack integration provides for error reporting in cases of errors with RDS instances, databases, or executed queries.
+
+![agent-x-errors](https://github.com/drexler/agent-x/blob/master/.github/agent-x-slack-integration.png)
+
+![agent-x-success](https://github.com/drexler/agent-x/blob/master/.github/agent-x-success.png)
+
+
+
+
+
+
