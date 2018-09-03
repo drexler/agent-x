@@ -2,8 +2,10 @@
 import * as agentDao from './agent.dao';
 import { Queries } from './queries';
 import { ConnectionPool, IResult } from 'mssql';
+import { SettledResult } from 'p-settle';
 
 import * as pSettle from 'p-settle';
+import * as notificationService from './notification';
 
 /**
  * Executes sql scripts across all databases within a given RDS instance
@@ -21,8 +23,9 @@ export async function executeQueries(rdsInstanceEndpoint: string): Promise<void>
 
             // Preemptively handle error to allow other database updates executions to go ahead.
             update.catch((error) => {
-                console.error(`Database error. Instance Endpoint: ${rdsInstanceEndpoint} Database: ${database}`);
-                console.error(error);
+                const errorMessage = `Database error. Instance Endpoint: ${rdsInstanceEndpoint} Database: ${database}`;
+                console.error(`${errorMessage}. Reason: ${error}`);
+                notificationService.publishMessage(errorMessage);
                 return error;
             });
 
@@ -67,7 +70,7 @@ async function listAvailableDatabases(rdsInstanceEndpoint: string): Promise<stri
         console.error('unable to list databases');
         throw error;
     } finally {
-        if (pool) {
+        if (pool && pool.connected) {
             await pool.close();
         }
     }
@@ -102,21 +105,26 @@ async function executeQueryOnDatabase(rdsInstanceEndpoint: string, database: str
 
                // Preemptively handle error to allow other queries executions to go ahead.
                invocation.catch((error) => {
-                   console.error(`Execution error. Query name: ${name} Database: ${database} Endpoint: ${rdsInstanceEndpoint}`);
-                   console.error(error);
-                   return error;
+                   const errorMessage = `Execution error. Query name: ${name} Database: ${database} Endpoint: ${rdsInstanceEndpoint}. Reason: ${error}`;
+                   return new Error(errorMessage);
                });
 
                queryExecutions.push(invocation);
         });
 
-        await pSettle(queryExecutions);
+        const executionResults: Array<SettledResult<IResult<{}>>> = await pSettle(queryExecutions);
+        executionResults
+            .filter((result) => result.isRejected === true)
+            .forEach((executionError) => {
+                console.error(executionError.reason);
+                notificationService.publishMessage(executionError.reason);
+            });
 
     } catch (error) {
         throw error;
     } finally {
-        if (pool) {
-            await pool.close();
+        if (pool && pool.connected) {
+           // await pool.close();
         }
     }
 }

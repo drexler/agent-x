@@ -5,7 +5,7 @@ export async function publishMessage(message: any): Promise<any> {
 
     const sns = new aws.SNS();
     const params = {
-        Message: message,
+        Message: JSON.stringify(message),
         Subject: 'Test SNS From Lambda',
         TopicArn: `${process.env.notificationTopicArn}`,
     };

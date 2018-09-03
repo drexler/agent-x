@@ -19,6 +19,7 @@ provider:
     dbPassword: ${file(${opt:variables}):dbPassword}
     dbEndpoints: ${file(${opt:variables}):dbEndpoints}
     notificationTopicArn: ${self:custom.topicArn}
+    slackWebIntegrationUrl: ${file(${opt:variables}):slackWebIntegrationUrl}
 
   iamRoleStatements: 
     - Effect: Allow
@@ -43,6 +44,10 @@ functions:
       - schedule: 
           rate: cron(0/2 * * * ? *)    # Run every 2 minutes (Test)  cron(0,0 9 * * ? *)   # Run at 0900 UTC each day
           enabled: true
+  slackNotify:
+    handler: src/handler.slackNotify
+    events:
+      - sns: arn:aws:sns:${self:provider.region}:#{AWS::AccountId}:${self:custom.topicName}
 
 resources:
   Resources:

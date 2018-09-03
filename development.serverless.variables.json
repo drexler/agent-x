@@ -6,5 +6,6 @@
     "lambdaExecutionSecurityGroup": "sg-xxxxxxxx",
     "privateSubnetId1": "subnet-xxxxxxxx",
     "privateSubnetId2": "subnet-xxxxxxxx",
-    "webpackConfigurationFile": "pre-production.config.js"
+    "webpackConfigurationFile": "pre-production.config.js",
+    "slackWebIntegrationUrl": "https://hooks.slack.com/services/xxxxxxx/xxxxxxx"
 }
