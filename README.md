@@ -23,8 +23,9 @@
 ##### Slack Integration
 Out-of-the-box support for Slack integration provides for error reporting in cases of errors with RDS instances, databases, or executed queries.
 
-![agent-x-errors](https://github.com/drexler/agent-x/blob/master/.github/agent-x-slack-integration.png)
-
+![agent-x-rds-instance-error](https://github.com/drexler/agent-x/blob/master/.github/rds-instance-error.png)
+![agent-x-database-error](https://github.com/drexler/agent-x/blob/master/.github/database-error.png)
+![agent-x-query-execution-error](https://github.com/drexler/agent-x/blob/master/.github/query-execution-error.png)
 ![agent-x-success](https://github.com/drexler/agent-x/blob/master/.github/agent-x-success.png)
 
 
