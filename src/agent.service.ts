@@ -2,7 +2,6 @@
 import * as agentDao from './agent.dao';
 import { Queries } from './queries';
 import { ConnectionPool, IResult, RequestError } from 'mssql';
-import { SettledResult } from 'p-settle';
 
 import * as pSettle from 'p-settle';
 import * as notificationService from './notification';
@@ -110,7 +109,6 @@ async function executeQueryOnDatabase(rdsInstanceEndpoint: string, database: str
             .forEach((name) => {
                const invocation = agentDao.executeQuery(pool.transaction(), name, Queries[name]);
 
-               // Preemptively handle error to allow other queries executions to go ahead.
                invocation.catch((error: RequestError) => {
                    const errorMessage = `Execution error. Query name: ${name} Database: ${database} Endpoint: ${rdsInstanceEndpoint}. Reason: ${error.message}`;
                    console.error(errorMessage);

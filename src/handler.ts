@@ -37,10 +37,11 @@ export async function executeQueries(event: ScheduledEvent, context: Context) {
   // Perform parallel executions on respective RDS instances
   try {
     await pSettle(invocations);
-    if (instanceErrors.length > 0) {
-      await notificationService.publishMessage(slackService.buildMessageAttachment(instanceErrors));
-    }
-    await notificationService.publishMessage(slackService.buildMessage('Agent-X executed successfully'));
+
+    instanceErrors.length > 0
+      ? await notificationService.publishMessage(slackService.buildMessageAttachment(instanceErrors))
+      : await notificationService.publishMessage(slackService.buildMessage('Agent-X executed successfully'));
+
   } catch (error) {
     const errorMessage = `Lambda Execution Failure: ${error.message}`;
     console.error(errorMessage);
