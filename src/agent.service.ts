@@ -131,6 +131,10 @@ async function executeQueryOnDatabase(rdsInstanceEndpoint: string, database: str
         throw error;
     } finally {
         if (pool && pool.connected) {
+            /**
+             * Best practice to close all connections once there's no need for them.
+             * TODO: Once this is resolved: https://github.com/tediousjs/node-mssql/issues/467
+             */
            // await pool.close();
         }
     }

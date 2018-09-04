@@ -6,6 +6,8 @@
  * @returns {string}:  A formatted Slack message attachment
  */
 export function buildMessageAttachment(messages: string[]): string {
+    console.info('slack.buildMessageAttachment');
+
     const messageAttachment = {
 
         attachments: [
@@ -37,6 +39,8 @@ export function buildMessageAttachment(messages: string[]): string {
  * @returns {string}:  A formatted Slack message
  */
 export function buildMessage(message: string): string {
+    console.info('slack.buildMessage');
+
     return JSON.stringify({
         text: message,
     });
