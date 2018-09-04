@@ -1,3 +1,4 @@
+import * as timestamp from 'unix-timestamp';
 
 /**
  * Builds a Slack message attachment
@@ -25,7 +26,7 @@ export function buildMessageAttachment(messages: string[]): string {
             ],
             footer: 'Drexler Skunkworks Inc',
             footer_icon: 'https://platform.slack-edge.com/img/default_application_icon.png',
-            ts: 123456789,
+            ts: timestamp.now(),
           },
         ],
     };
